@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Read and Edit CSV File</h1>
+    <div class="buttons">
+    <button id='read-csv'>Select and Read CSV File</button>
+    <button id='save-csv'>Save CSV File</button>
+  </div>
+    <table id='csv-table' border="1">
+      <thead>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+
+  <script>
+    const readCsvButton = document.getElementById('read-csv')
+    const saveBtn = document.getElementById('save-csv')
+    const table = document.getElementById('csv-table')
+
+    readCsvButton.addEventListener('click', () => {
+      window.electron.readCSV()
+    })
+
+    saveBtn.addEventListener('click', () => {
+      const updatedData = Array.from(table.querySelectorAll('tbody tr')).map(row => {
+        return Array.from(row.querySelectorAll('td')).map((cell) => cell.textContent)
+      })
+
+      window.electron.saveCSV(updatedData)
+    })
+
+
+    window.electron.onCSVContent((content) => {
+      console.log({content})
+      renderTable(content.data)
+    })
+
+    window.electron.onCSVSaveResult((data) => {
+      if(data.success) {
+
+      const thead = table.querySelector('thead')
+      const tbody = table.querySelector('tbody')
+
+      thead.innerHTML = ''
+  tbody.innerHTML = ''
+
+    window.alert('SAved')
+      }
+
+    })
+
+    const renderTable = (data) => {
+      const thead = table.querySelector('thead')
+      const tbody = table.querySelector('tbody')
+
+      thead.innerHTML = ''
+
+      const headerRow = document.createElement('tr')
+
+      Object.keys(data[0]).forEach(key => {
+        const th = document.createElement('th')
+        th.textContent = key
+        headerRow.appendChild(th)
+      })
+
+      thead.appendChild(headerRow)
+
+      tbody.innerHTML = ''
+
+      data.forEach((row) => {
+        const tr = document.createElement('tr')
+        Object.values(row).forEach(value => {
+          const td = document.createElement('td')
+          td.contentEditable = 'true'
+          td.textContent = value
+          tr.appendChild(td)
+        })
+        tbody.appendChild(tr)
+      })
+    }
+  </script>
+</body>
+</html>
