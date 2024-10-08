@@ -3,88 +3,187 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>Read and Edit CSV File</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <h1>Read and Edit CSV File</h1>
     <div class="buttons">
-    <button id='read-csv'>Select and Read CSV File</button>
-    <button id='save-csv'>Save CSV File</button>
-  </div>
+        <button id='read-csv'>Select and Read CSV File</button>
+        <button id='save-csv'>Save CSV File</button>
+        <button id="add-row">Add Row</button>
+        <button id="add-column">Add Column</button>
+    </div>
     <table id='csv-table' border="1">
-      <thead>
-      </thead>
-      <tbody>
-      </tbody>
+        <thead></thead>
+        <tbody></tbody>
     </table>
 
-  <script>
-    const readCsvButton = document.getElementById('read-csv')
-    const saveBtn = document.getElementById('save-csv')
-    const table = document.getElementById('csv-table')
+    <script>
+        const readCsvButton = document.getElementById('read-csv');
+        const saveBtn = document.getElementById('save-csv');
+        const addRowBtn = document.getElementById('add-row');
+        const addColumnBtn = document.getElementById('add-column');
+        const table = document.getElementById('csv-table');
 
-    readCsvButton.addEventListener('click', () => {
-      window.electron.readCSV()
-    })
+        // функція для додавання рядка
+        const getColumnCount = () => table.querySelector('thead tr') ? table.querySelector('thead tr').children.length - 1 : 0;
 
-    saveBtn.addEventListener('click', () => {
-      const updatedData = Array.from(table.querySelectorAll('tbody tr')).map(row => {
-        return Array.from(row.querySelectorAll('td')).map((cell) => cell.textContent)
-      })
+        
+        readCsvButton.addEventListener('click', () => {
+            window.electron.readCSV();
+        });
 
-      window.electron.saveCSV(updatedData)
-    })
+        // функція для створення заголовка стовпця
+        saveBtn.addEventListener('click', () => {
+            const updatedData = Array.from(table.querySelectorAll('tbody tr')).map(row => {
+                return Array.from(row.querySelectorAll('td:not(:last-child)')).map((cell) => cell.textContent);
+            });
+            window.electron.saveCSV(updatedData);
+        });
 
+        
+        addRowBtn.addEventListener('click', () => addRow());
 
-    window.electron.onCSVContent((content) => {
-      console.log({content})
-      renderTable(content.data)
-    })
+        
+        addColumnBtn.addEventListener('click', () => addColumn());
 
-    window.electron.onCSVSaveResult((data) => {
-      if(data.success) {
+        
+        window.electron.onCSVContent((content) => {
+            renderTable(content.data);
+        });
 
-      const thead = table.querySelector('thead')
-      const tbody = table.querySelector('tbody')
+        
+        window.electron.onCSVSaveResult((data) => {
+            if (data.success) {
+                window.alert('CSV файл успішно збережено!');
+            }
+        });
 
-      thead.innerHTML = ''
-  tbody.innerHTML = ''
+        
+        const renderTable = (data) => {
+            const thead = table.querySelector('thead');
+            const tbody = table.querySelector('tbody');
 
-    window.alert('SAved')
-      }
+            
+            thead.innerHTML = '';
+            tbody.innerHTML = '';
 
-    })
+            
+            const headerRow = document.createElement('tr');
+            Object.keys(data[0]).forEach((key, index) => {
+                headerRow.appendChild(createHeaderCell(key, index));
+            });
 
-    const renderTable = (data) => {
-      const thead = table.querySelector('thead')
-      const tbody = table.querySelector('tbody')
+            
+            headerRow.appendChild(createHeaderCell('Actions'));
+            thead.appendChild(headerRow);
 
-      thead.innerHTML = ''
+            
+            data.forEach((row) => {
+                tbody.appendChild(createDataRow(row));
+            });
+        };
 
-      const headerRow = document.createElement('tr')
+        
+        const createHeaderCell = (text, index = null) => {
+            const th = document.createElement('th');
+            th.textContent = text;
 
-      Object.keys(data[0]).forEach(key => {
-        const th = document.createElement('th')
-        th.textContent = key
-        headerRow.appendChild(th)
-      })
+            if (index !== null) {
+                const deleteColBtn = document.createElement('button');
+                deleteColBtn.textContent = 'Delete';
+                deleteColBtn.addEventListener('click', () => deleteColumn(index));
+                th.appendChild(deleteColBtn);
+            }
 
-      thead.appendChild(headerRow)
+            return th;
+        };
 
-      tbody.innerHTML = ''
+        
+        const createDataRow = (row) => {
+            const tr = document.createElement('tr');
 
-      data.forEach((row) => {
-        const tr = document.createElement('tr')
-        Object.values(row).forEach(value => {
-          const td = document.createElement('td')
-          td.contentEditable = 'true'
-          td.textContent = value
-          tr.appendChild(td)
-        })
-        tbody.appendChild(tr)
-      })
-    }
-  </script>
+            Object.values(row).forEach(value => {
+                const td = document.createElement('td');
+                td.contentEditable = 'true';
+                td.textContent = value;
+                tr.appendChild(td);
+            });
+
+            const actionTd = document.createElement('td');
+            const deleteBtn = document.createElement('button');
+            deleteBtn.textContent = 'Delete';
+            deleteBtn.addEventListener('click', () => tr.remove());
+            actionTd.appendChild(deleteBtn);
+            tr.appendChild(actionTd);
+
+            return tr;
+        };
+
+        
+        const addRow = () => {
+            const thead = table.querySelector('thead');
+            const tbody = table.querySelector('tbody');
+
+            
+            if (!thead.querySelector('tr')) {
+                addColumn(); 
+            }
+
+            const tr = document.createElement('tr');
+
+            for (let i = 0; i < getColumnCount(); i++) {
+                const td = document.createElement('td');
+                td.contentEditable = 'true';
+                tr.appendChild(td);
+            }
+
+            const actionTd = document.createElement('td');
+            const deleteBtn = document.createElement('button');
+            deleteBtn.textContent = 'Delete';
+            deleteBtn.addEventListener('click', () => tr.remove());
+            actionTd.appendChild(deleteBtn);
+            tr.appendChild(actionTd);
+
+            tbody.appendChild(tr);
+        };
+
+        
+        const addColumn = () => {
+            const thead = table.querySelector('thead');
+            const tbody = table.querySelector('tbody');
+
+            
+            if (!thead.querySelector('tr')) {
+                const headerRow = document.createElement('tr');
+                thead.appendChild(headerRow);
+            }
+
+            const newColumnIndex = getColumnCount();
+            thead.querySelector('tr').insertBefore(createHeaderCell(`Column ${newColumnIndex + 1}`, newColumnIndex), thead.querySelector('tr').lastChild);
+
+            
+            tbody.querySelectorAll('tr').forEach((tr) => {
+                const td = document.createElement('td');
+                td.contentEditable = 'true';
+                tr.insertBefore(td, tr.lastChild);
+            });
+        };
+
+        
+        const deleteColumn = (columnIndex) => {
+            const thead = table.querySelector('thead');
+            const tbody = table.querySelector('tbody');
+
+            
+            thead.querySelectorAll('th')[columnIndex].remove();
+
+            
+            tbody.querySelectorAll('tr').forEach((tr) => {
+                tr.querySelectorAll('td')[columnIndex].remove();
+            });
+        };
+    </script>
 </body>
 </html>
