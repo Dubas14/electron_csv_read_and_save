@@ -10,7 +10,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "electron": "^32.0.2"
+    "electron": "^32.2.2"
   },
   "dependencies": {
     "csv-parser": "^3.0.0",

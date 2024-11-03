@@ -18,6 +18,13 @@
         <thead></thead>
         <tbody></tbody>
     </table>
+    <img id="imageDisplay" src="" alt="Captured Image" />
+
+<script>
+    window.electron.onDisplayImage((event, imageData) => {
+        document.getElementById('imageDisplay').src = imageData;
+    });
+</script>
 
     <script>
         const readCsvButton = document.getElementById('read-csv');
